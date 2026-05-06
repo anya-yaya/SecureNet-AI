@@ -12,7 +12,7 @@ from sklearn.svm import LinearSVC
 
 print(" Starting Training...")
 
-df = pd.read_excel("balanced_dataset_75000.xlsx")
+df = pd.read_excel("Datasets/balanced_dataset_75000.xlsx")
 
 print(" Dataset Loaded!")
 print(df.head())
@@ -59,8 +59,8 @@ print("\n Classification Report:\n", classification_report(y_test, y_pred))
 print("\n Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
 
 
-joblib.dump(model, "model.pkl")
-joblib.dump(vectorizer, "vectorizer.pkl")
+joblib.dump(model, "Models/model.pkl")
+joblib.dump(vectorizer, "Models/vectorizer.pkl")
 
 print("\n Model Saved Successfully!")
 
