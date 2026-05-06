@@ -6,10 +6,10 @@ import re
 # -------------------------------
 # APP INIT
 # -------------------------------
-app = FastAPI()
+app = FastAPI(title="Cybersecurity Detection API")
 
 # -------------------------------
-# LOAD MODELS
+# LOAD MODELS (MATCH TRAINING)
 # -------------------------------
 model = joblib.load("Models/model.pkl")
 vectorizer = joblib.load("Models/vectorizer.pkl")
@@ -32,17 +32,16 @@ XSS_PATTERNS = [
 ]
 
 def rule_based_predict(text):
-    sql_hits = sum(1 for p in SQL_PATTERNS if re.search(p, text))
-    xss_hits = sum(1 for p in XSS_PATTERNS if re.search(p, text))
-
-    if sql_hits > 0:
-        return "SQLi"
-    if xss_hits > 0:
-        return "XSS"
+    for p in SQL_PATTERNS:
+        if re.search(p, text):
+            return "SQLi"
+    for p in XSS_PATTERNS:
+        if re.search(p, text):
+            return "XSS"
     return None
 
 # -------------------------------
-# PREPROCESS
+# PREPROCESS (SAME AS TRAIN)
 # -------------------------------
 def preprocess(text):
     if not isinstance(text, str):
@@ -62,35 +61,46 @@ class InputData(BaseModel):
 # -------------------------------
 @app.get("/")
 def home():
-    return {"message": "🚀 API running"}
+    return {"message": "🚀 Cybersecurity Detection API Running"}
 
 @app.post("/predict")
 def predict(data: InputData):
     try:
-        text = data.text
-        clean = preprocess(text)
+        clean = preprocess(data.text)
 
-        # 🔹 RULE-BASED FIRST
+        # 🔹 RULE-BASED FIRST (FAST DETECTION)
         rule = rule_based_predict(clean)
         if rule == "SQLi":
-            return {"result": "⚠️ SQL Injection Attack"}
+            return {"prediction": "⚠️ SQL Injection Attack", "source": "rule-based"}
         if rule == "XSS":
-            return {"result": "⚠️ XSS Attack"}
+            return {"prediction": "⚠️ XSS Attack", "source": "rule-based"}
 
         # 🔹 ML PREDICTION
         vector = vectorizer.transform([clean])
-        pred = model.predict(vector)
 
-        # 🔥 SAFE decoding
-        pred_label = le.inverse_transform(pred)[0]
+        pred = model.predict(vector)[0]   # single value
+        label = le.inverse_transform([pred])[0]
+
+        # 🔹 OPTIONAL CONFIDENCE (since you used CalibratedClassifierCV)
+        confidence = None
+        if hasattr(model, "predict_proba"):
+            prob = model.predict_proba(vector)[0]
+            confidence = float(max(prob))
 
         # 🔹 FINAL OUTPUT
-        if pred_label == "Normal":
-            return {"result": "✅ Safe Input"}
-        elif pred_label == "SQLi":
-            return {"result": "⚠️ SQL Injection Attack"}
+        if label == "Normal":
+            result = "✅ Safe Input"
+        elif label == "SQLi":
+            result = "⚠️ SQL Injection Attack"
         else:
-            return {"result": "⚠️ XSS Attack"}
+            result = "⚠️ XSS Attack"
+
+        return {
+            "prediction": result,
+            "label": label,
+            "confidence": confidence,
+            "source": "ml-model"
+        }
 
     except Exception as e:
         return {

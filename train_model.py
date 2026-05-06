@@ -4,6 +4,7 @@ Hybrid ML + Rule-Based approach with multiclass classification.
 """
 
 import re
+import os
 import pandas as pd
 import joblib
 import numpy as np
@@ -16,6 +17,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.pipeline import FeatureUnion
 from imblearn.over_sampling import SMOTE
 import warnings
+
 warnings.filterwarnings("ignore")
 
 # ─────────────────────────────────────────────
@@ -29,15 +31,12 @@ SQL_PATTERNS = [
     r"(?i)(\band\b\s+[\w'\"]+\s*=\s*[\w'\"]+)",
 ]
 
-<<<<<<< HEAD:Backend/train_model.py
-df = pd.read_excel("Datasets/balanced_dataset_75000.xlsx")
-=======
 XSS_PATTERNS = [
     r"(?i)<\s*script[\s>]",
     r"(?i)\bon\w+\s*=",
     r"(?i)javascript\s*:",
 ]
->>>>>>> d95d008 (Add dataset and trained model files):train_model.py
+
 
 def rule_based_predict(text):
     sql_hits = sum(1 for p in SQL_PATTERNS if re.search(p, text))
@@ -80,7 +79,7 @@ X_text = df["text"].values
 print("Classes:", dict(zip(le.classes_, le.transform(le.classes_))))
 
 # ─────────────────────────────────────────────
-# 4. VECTORIZER (FIXED)
+# 4. VECTORIZER
 # ─────────────────────────────────────────────
 
 vec_char = TfidfVectorizer(
@@ -96,14 +95,12 @@ vec_word = TfidfVectorizer(
     token_pattern=r"(?u)\b\w+\b|['\"\-\#\;<>\/]",
 )
 
-# ✅ SINGLE COMBINED VECTORIZER (FIX)
 vectorizer = FeatureUnion([
     ("char", vec_char),
     ("word", vec_word)
 ])
 
 X = vectorizer.fit_transform(X_text)
-
 print("Feature shape:", X.shape)
 
 # ─────────────────────────────────────────────
@@ -131,7 +128,6 @@ model = CalibratedClassifierCV(
 )
 
 model.fit(X_train, y_train)
-
 print("Model trained!")
 
 # ─────────────────────────────────────────────
@@ -145,23 +141,19 @@ print("\nReport:\n", classification_report(y_test, y_pred))
 print("\nConfusion Matrix:\n", confusion_matrix(y_test, y_pred))
 
 # ─────────────────────────────────────────────
-# 9. SAVE (FIXED)
+# 9. SAVE MODELS
 # ─────────────────────────────────────────────
 
-import os
 os.makedirs("Models", exist_ok=True)
 
 joblib.dump(model, "Models/model.pkl")
 joblib.dump(vectorizer, "Models/vectorizer.pkl")
-<<<<<<< HEAD:Backend/train_model.py
-=======
 joblib.dump(le, "Models/label_encoder.pkl")
->>>>>>> d95d008 (Add dataset and trained model files):train_model.py
 
-print("Model saved!")
+print("Models saved successfully!")
 
 # ─────────────────────────────────────────────
-# 10. PREDICT FUNCTION (FIXED)
+# 10. PREDICT FUNCTION
 # ─────────────────────────────────────────────
 
 def predict_input(text):
