@@ -6,20 +6,35 @@ function App() {
 
   const [text, setText] = useState("");
   const [result, setResult] = useState("");
+  const [source, setSource] = useState("");
+  const [confidence, setConfidence] = useState("");
   const [history, setHistory] = useState([]);
 
   const scanInput = async () => {
-    const res = await axios.post("http://localhost:5000/scan", {
-      text
-    });
 
-    setResult(res.data.result);
-    loadHistory();
+    try{
+
+      const res = await axios.post("http://localhost:5000/scan", {
+        text
+      });
+
+      setResult(res.data.result);
+      setSource(res.data.source);
+      setConfidence(res.data.confidence);
+
+      loadHistory();
+
+    }catch(error){
+      alert("Backend Error");
+    }
+
   };
 
   const loadHistory = async () => {
+
     const res = await axios.get("http://localhost:5000/history");
     setHistory(res.data);
+
   };
 
   useEffect(() => {
@@ -42,7 +57,11 @@ function App() {
         Scan Now
       </button>
 
-      <h2>{result}</h2>
+      <div className="resultBox">
+        <h2>{result}</h2>
+        <p><b>Detection:</b> {source}</p>
+        {confidence && <p><b>Confidence:</b> {(confidence*100).toFixed(2)}%</p>}
+      </div>
 
       <hr />
 
@@ -52,6 +71,7 @@ function App() {
         <div className="card" key={index}>
           <p><b>Input:</b> {item.text}</p>
           <p><b>Result:</b> {item.result}</p>
+          <p><b>Source:</b> {item.source}</p>
         </div>
       ))}
 

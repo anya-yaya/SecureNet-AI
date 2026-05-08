@@ -1,4 +1,5 @@
 require("dotenv").config();
+
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -9,17 +10,17 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-
 // MongoDB Connect
 mongoose.connect(process.env.MONGO_URI)
-.then(() => console.log("MongoDB Connected"))
+.then(() => console.log("✅ MongoDB Connected"))
 .catch(err => console.log(err));
-
 
 // Schema
 const ScanSchema = new mongoose.Schema({
     text: String,
     result: String,
+    source: String,
+    confidence: String,
     createdAt: {
         type: Date,
         default: Date.now
@@ -28,12 +29,10 @@ const ScanSchema = new mongoose.Schema({
 
 const Scan = mongoose.model("Scan", ScanSchema);
 
-
-// Home Route
+// Home
 app.get("/", (req,res)=>{
-    res.send("Node Backend Running");
+    res.send("🚀 Node Backend Running");
 });
-
 
 // Scan Route
 app.post("/scan", async (req,res)=>{
@@ -42,26 +41,36 @@ app.post("/scan", async (req,res)=>{
 
         const text = req.body.text;
 
-        // Call FastAPI
+        // FastAPI call
         const response = await axios.post(
             "http://127.0.0.1:8000/predict",
-            { text:text }
+            { text }
         );
 
-        const result = response.data.result;
+        // 🔥 FIX HERE
+        const result = response.data.prediction;
+        const source = response.data.source || "unknown";
+        const confidence = response.data.confidence || null;
 
         // Save DB
         await Scan.create({
             text,
-            result
+            result,
+            source,
+            confidence
         });
 
         res.json({
             text,
-            result
+            result,
+            source,
+            confidence
         });
 
     }catch(error){
+
+        console.log(error.message);
+
         res.status(500).json({
             error:"Server Error"
         });
@@ -69,8 +78,7 @@ app.post("/scan", async (req,res)=>{
 
 });
 
-
-// History Route
+// History
 app.get("/history", async(req,res)=>{
 
     const data = await Scan.find().sort({createdAt:-1});
@@ -79,7 +87,6 @@ app.get("/history", async(req,res)=>{
 
 });
 
-
 app.listen(5000, ()=>{
-    console.log("Server Running on Port 5000");
+    console.log("✅ Server Running on Port 5000");
 });
