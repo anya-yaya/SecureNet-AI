@@ -14,7 +14,7 @@ function App() {
 
     try{
 
-      const res = await axios.post("http://localhost:5000/scan", {
+      const res = await axios.post("https://securenet-ai-1.onrender.com/scan", {
         text
       });
 
@@ -32,7 +32,7 @@ function App() {
 
   const loadHistory = async () => {
 
-    const res = await axios.get("http://localhost:5000/history");
+    const res = await axios.get("https://securenet-ai-1.onrender.com/history");
     setHistory(res.data);
 
   };
