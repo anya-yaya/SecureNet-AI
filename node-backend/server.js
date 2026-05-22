@@ -43,7 +43,7 @@ app.post("/scan", async (req,res)=>{
 
         // FastAPI call
         const response = await axios.post(
-            "http://127.0.0.1:8000/predict",
+            "https://securenet-ai.onrender.com/predict",
             { text }
         );
 
